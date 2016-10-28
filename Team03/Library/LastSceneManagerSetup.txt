@@ -1,0 +1,4 @@
+sceneSetups:
+- path: Assets/Nishikubo/Scenes/PlayerSample.unity
+  isLoaded: 1
+  isActive: 1
