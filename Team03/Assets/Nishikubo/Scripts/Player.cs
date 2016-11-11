@@ -4,8 +4,6 @@ using System.Collections.Generic;
 
 public class Player : MonoBehaviour {
 
-    //重力加速度
-    private float gravity = 9.8f;
     //移動する方向ベクトル
     private Vector3 moveDirection = Vector3.zero;
     //移動速度
@@ -16,22 +14,20 @@ public class Player : MonoBehaviour {
     public float mass = 1.0f;
     //CharacterController取得
     private CharacterController controller;
-
-
     //急降下中か
     private bool swooped = false;
-
     private bool jumped = false;
     //地面へ（真下）
     RaycastHit floorhit;
-
     //急降下した地点
     private float distance = 0.0f;
-
     //Wave
     public WaveSetting wave;
     //質量保存
     private float ma = 0.0f;
+    //
+    public List<float> dis = new List<float>();
+
 
     // Use this for initialization
     void Start () {
@@ -41,11 +37,11 @@ public class Player : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-        Move();
+        Move(9.8f);
     }
 
     //移動処理
-    void Move()
+    void Move(float gravity)
     {
         float y = moveDirection.y;
         moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
@@ -129,7 +125,7 @@ public class Player : MonoBehaviour {
             wave.Instance(5, new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z));
         }
         else if (distance >= 1)
-        {
+            {
             //Debug.Log("衝撃波　小");
             wave.WaveSizeSet(1.0f);
             //wave.Instance(3, new Vector3(transform.position.x, transform.position.y - transform.position.y + 0.1f, transform.position.z));

@@ -63,11 +63,32 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Team03.CSharp.Plugins.csproj">
+      <Project>{6B20BDA6-C968-1525-4A5E-661BE2D0AC02}</Project>
+      <Name>Team03.CSharp.Plugins</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets\Kageyama\Script\CameraMove.cs" />
+    <Compile Include="Assets\Kageyama\Script\WaveColorChange.cs" />
+    <Compile Include="Assets\Kageyama\Script\WaveEffect.cs" />
+    <Compile Include="Assets\Kageyama\Script\WaveSetting.cs" />
+    <Compile Include="Assets\Kageyama\Script\WaveSizeChange.cs" />
+    <Compile Include="Assets\Kageyama\Script\iTween.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Player.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Wave.cs" />
-    <Compile Include="Assets\Wabe\DestroyScript.cs" />
-    <Compile Include="Assets\Wabe\InstanceScript.cs" />
-    <Compile Include="Assets\Wabe\SizeChangeScript.cs" />
+    <Compile Include="Assets\namba\Script\EnemyBase.cs" />
+    <Compile Include="Assets\namba\Script\EnemyRoutine.cs" />
+    <Compile Include="Assets\namba\Script\IState.cs" />
+    <Compile Include="Assets\namba\Script\PosGenerator.cs" />
+    <Compile Include="Assets\namba\Script\SimpleMovement.cs" />
+    <Compile Include="Assets\namba\Script\StateManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Kageyama\Shader\X-Ray.shader" />
+    <None Include="Assets\Standard Assets\Cameras\CameraGuidelines.txt" />
+    <None Include="Assets\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
+    <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>
