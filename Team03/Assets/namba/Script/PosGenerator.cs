@@ -30,6 +30,7 @@ public class PosGenerator : MonoBehaviour
             if (transform.childCount >= 1)
             {
                 Debug.DrawRay(this.transform.position, _Positions[0].position - this.transform.position);
+                Debug.DrawRay(this.transform.position, _Positions[_Positions.Length - 1].position - this.transform.position);
                 if (transform.childCount >= 2)
                 {
                     for (int i = 0; i < _Positions.Length - 1; i++)

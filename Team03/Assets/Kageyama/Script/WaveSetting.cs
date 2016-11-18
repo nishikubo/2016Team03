@@ -50,37 +50,39 @@ public class WaveSetting : MonoBehaviour {
         if(Input.GetKeyDown(KeyCode.X))
         {
             SettingColor(color_);
-            Instance(5, new Vector3(0, 0.01f, 0));
+            Instance(5, new Vector3(0, 0.01f, 0), "PlayerWave");
         }	
 	}
 
     //波とエフェクトを作成
-    public void Instance(Vector3 position)
+    public void Instance(Vector3 position, string tagname)
     {
         //波を生成(一つ)
-        WaveInstance(position);
+        WaveInstance(position, tagname);
         //パーティクルの生成
         EffectInstance(position);
     }
 
-    public void Instance(int num, Vector3 position)
+    public void Instance(int num, Vector3 position, string tagname)
     {
         //生成(複数)
-        StartCoroutine(WaveInstance(num, position));
+        StartCoroutine(WaveInstance(num, position, tagname));
         //パーティクルの生成
         EffectInstance(position);
     }
 
     //波の作成
-    public void WaveInstance(Vector3 position)
+    public void WaveInstance(Vector3 position, string tagname)
     {
+        waveCollider_.tag = tagname;
         //当たり判定の作成
         Instantiate(waveCollider_, position, new Quaternion(0, 0, 0, 0));
         Instantiate(wave_, position, new Quaternion(0, 0, 0, 0));
     }
     //波の生成(複数)
-    public IEnumerator WaveInstance(int num, Vector3 position)
+    public IEnumerator WaveInstance(int num, Vector3 position, string tagname)
     {
+        waveCollider_.tag = tagname;
         //当たり判定の作成
         Instantiate(waveCollider_, position, new Quaternion(0, 0, 0, 0));
         for (int i = 0; i < num; i++)

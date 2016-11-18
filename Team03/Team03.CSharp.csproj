@@ -77,12 +77,17 @@
     <Compile Include="Assets\Kageyama\Script\iTween.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Player.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Wave.cs" />
+    <Compile Include="Assets\namba\Script\Blowoff.cs" />
+    <Compile Include="Assets\namba\Script\Btest.cs" />
+    <Compile Include="Assets\namba\Script\BuilBlow.cs" />
     <Compile Include="Assets\namba\Script\EnemyBase.cs" />
     <Compile Include="Assets\namba\Script\EnemyRoutine.cs" />
     <Compile Include="Assets\namba\Script\IState.cs" />
+    <Compile Include="Assets\namba\Script\NewBehaviourScript.cs" />
     <Compile Include="Assets\namba\Script\PosGenerator.cs" />
     <Compile Include="Assets\namba\Script\SimpleMovement.cs" />
     <Compile Include="Assets\namba\Script\StateManager.cs" />
+    <Compile Include="Assets\namba\Script\ptest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Kageyama\Shader\X-Ray.shader" />
