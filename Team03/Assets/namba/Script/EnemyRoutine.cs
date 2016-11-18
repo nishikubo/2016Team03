@@ -7,30 +7,50 @@ public enum EnemyState
     Wait,
     Pursuit,
     Attack,
-    Died
+    Died,
+    Hit
 }
 
 public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 {
+    #region Component
     private Transform _target;
     private Rigidbody _rd;
     private NavMeshAgent _Agent;
+    #endregion
+    
+    #region Tag
+    private string _TargetTag = "Player";               // ターゲットとする相手のタグ
+    private string _FieldTag = "Floor";                 // 地面のタグ
+    #endregion
 
-    public string _TargetTag = "Player";
-    public string _FieldTag = "Floor";
-    public float _SearchArea = 10;
-    public float _AttackArea = 5;
-    public float _rotateSmooth = 3.0f;
-    public float _Speed = 5;
-    public float _JumpPower = 5;
-    public int _life = 5;
-    public string[] _outlayer = new string[] { "" };
-    public bool _IsGround = false;
-    public bool _IsHitPlayer = false;
+    #region -各種ステータス-
+    public float _SearchArea = 10;                      // 索敵範囲(距離)
+    public float _AttackArea = 5;                       // 攻撃範囲(距離)
+    public float _rotateSmooth = 3.0f;                  // 振り向きにかかる速度
+    public float _Speed = 5;                            // 追跡時の移動スピード
+    public float _JumpPower = 5;                        // ジャンプ力
+    public int _life = 5;                               // 体力
+    #endregion
 
-    public Vector3[] _LoiteringPos;
+    public string[] _outlayer = new string[] { "" };    // 索敵時に無視するレイヤー名
 
+    #region -各種フラグ-
+    private bool _IsGround = false;                      // 接地しているかどうか
+    private bool _IsHitPlayer = false;                   // プレイヤーと接触しているかどうか
+    private bool _Diedflag = false;                     // 死亡しているかどうか
+    #endregion
+
+    private Vector3[] _LoiteringPos;                    // 徘徊するポジション
+    private Vector3 _vec;
+
+    #region -各種スクリプト-
     private PosGenerator _PosGene;
+    private Blowoff      _Blowoff;
+    #endregion
+
+    [SerializeField]
+    private bool _laydrawflag = true;                   // 徘徊ルートの表示(デバッグ用)
 
     // Use this for initialization
     public void Start()
@@ -44,22 +64,34 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         // 各種スクリプトの取得
         _PosGene = transform.FindChild("LoiteringPositions").GetComponent<PosGenerator>();
+        _Blowoff = GetComponent<Blowoff>();
 
         // 各種値の初期化
         _LoiteringPos = new Vector3[_PosGene.GetPos.Length];
-        for(int i = 0; i < _LoiteringPos.Length; i++)
+        for (int i = 0; i < _LoiteringPos.Length; i++)
         {
             _LoiteringPos[i] = _PosGene.GetPos[i].position;
         }
 
 
-        transform.FindChild("LoiteringPositions").parent = null;
+        if (_laydrawflag)
+        {
+            Transform poss = transform.FindChild("LoiteringPositions");
+            poss.transform.parent = null;
+            // transform.parent = poss;
+        }
+        else
+        {
+            GameObject obj = transform.FindChild("LoiteringPositions").gameObject;
+            obj.SetActive(false);
+        }
 
         // Stateの初期設定
         statelist.Add(new StateWait(this));
         statelist.Add(new StatePursuit(this));
         statelist.Add(new StateAttack(this));
         statelist.Add(new StateDied(this));
+        statelist.Add(new StateHit(this));
 
         stateManager = new StateManager<EnemyRoutine>();
 
@@ -109,20 +141,21 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         return Vector3.SqrMagnitude(temp);
     }
 
-    // ダメージ処理
+    // ヒット処理
     public void Hit(int damage)
     {
         Debug.Log("ﾋｯﾄｫｫ!!");
         _life -= damage;
         if (_life <= 0)
         {
-            ChangeState(EnemyState.Died);
+            Isdied();
+            // ChangeState(EnemyState.Died);
         }
-
+        ChangeState(EnemyState.Hit);
     }
 
 
-    // 検知以下二つ
+    #region ---各種衝突検知処理---
     public void OnCollisionEnter(Collision col)
     {
         if (col.collider.tag == _FieldTag) IsGround = true;
@@ -133,6 +166,16 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         if (col.collider.tag == _FieldTag) IsGround = false;
         if (col.collider.tag == _TargetTag) _IsHitPlayer = false;
     }
+
+    public void OnTriggerEnter(Collider col)
+    {
+        if (col.tag == "PlayerWave") {
+            FreezeRotation(false);
+            Hit(1);
+            _vec = (transform.position - col.transform.position).normalized;
+        }
+    }
+    #endregion
 
     // 地面に触れているかどうか
     public bool IsGround
@@ -146,7 +189,29 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     {
         get { return _IsHitPlayer; }
         set { _IsHitPlayer = value; }
-    } 
+    }
+
+    // 死亡
+    public void Isdied()
+    {
+        _Diedflag = true;
+    }
+
+    // 回転軸を固定するかしないか
+    public void FreezeRotation(bool value)
+    {
+        switch (value)
+        {
+            case true:
+                _rd.constraints = 
+                    RigidbodyConstraints.FreezeRotationX |
+                    RigidbodyConstraints.FreezeRotationZ;
+                break;
+            case false:
+                _rd.freezeRotation = false;
+                break;
+        }
+    }
 
     /*----------------------------------------------------/
                         ここからState処理
@@ -271,6 +336,9 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
             if (owner.IsGround && flag)
             {
                 Debug.Log("Take That, You Field!!");
+                Vector3 pos = owner.transform.position;
+                pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
+                WaveSetting.Setting.Instance(1, pos,"EnemyWave");
                 owner.ChangeState(EnemyState.Pursuit);
                 return;
             }
@@ -279,6 +347,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         public override void End()
         {
+            flag = false;
         }
 
 
@@ -305,4 +374,42 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         {
         }
     }
+
+    /// <summary>
+    /// ダメージ処理
+    /// </summary>
+    private class StateHit : IState<EnemyRoutine>
+    {
+        public StateHit(EnemyRoutine owner) : base(owner)
+        { }
+
+        bool flag = false;
+
+        public override void Initialize()
+        {
+            Vector3 vec = owner._vec;
+            vec.y = 1;
+            owner._Blowoff.blowoff(owner._rd, vec, 10);
+        }
+
+        public override void Execute()
+        {
+            if (owner.IsGround && flag)
+            {
+                Vector3 pos = owner.transform.position;
+                pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
+                WaveSetting.Setting.Instance(1, pos,"EnemyWave");
+                owner.ChangeState(EnemyState.Wait);
+                return;
+            }
+            if (!owner.IsGround && !flag) flag = true;
+        }
+
+        public override void End()
+        {
+            owner.FreezeRotation(true);
+            flag = false;
+        }
+    }
+
 }

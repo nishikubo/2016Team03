@@ -21,18 +21,23 @@ public class Player : MonoBehaviour {
     RaycastHit floorhit;
     //急降下した地点
     private float distance = 0.0f;
-    //Wave
-    public WaveSetting wave;
     //質量保存
     private float ma = 0.0f;
-    //
-    public List<float> dis = new List<float>();
-
+    //高さ
+    public List<float> hight = new List<float>();
+    //波の大きさ
+    public List<float> waveSize = new List<float>();
+    //波の量
+    public List<int> waveCount = new List<int>();
+    //プレイヤーの移動範囲
+    public float maxPosition = 20.0f;
+    public float minPosition = -20.0f;
 
     // Use this for initialization
     void Start () {
         controller = GetComponent<CharacterController>();
         ma = mass;
+
     }
 
     // Update is called once per frame
@@ -50,6 +55,10 @@ public class Player : MonoBehaviour {
         moveDirection.y -= gravity * Time.deltaTime * mass;
 
         controller.Move(moveDirection * Time.deltaTime);
+
+        //移動範囲
+        transform.position = new Vector3(Mathf.Clamp(transform.position.x, minPosition, maxPosition), Mathf.Clamp(transform.position.y, minPosition, maxPosition), Mathf.Clamp(transform.position.z, minPosition, maxPosition));
+
 
         if (controller.isGrounded)
         {
@@ -111,39 +120,26 @@ public class Player : MonoBehaviour {
     //高さから衝撃波生成
     void Distance()
     {
-        if (distance >= 10)
+        if (distance >= hight[0])
         {
             //Debug.Log("衝撃波　大");
-            wave.WaveSizeSet(2.0f);
-            wave.Instance(7, new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z));
+            WaveSetting.Setting.WaveSizeSet(waveSize[0]);
+            WaveSetting.Setting.Instance(waveCount[0], new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z),"PlayerWave");
 
         }
-        else if (distance >= 5)
+        else if (distance >= hight[1])
         {
             //Debug.Log("衝撃波　中");
-            wave.WaveSizeSet(1.7f);
-            wave.Instance(5, new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z));
+            WaveSetting.Setting.WaveSizeSet(waveSize[1]);
+            WaveSetting.Setting.Instance(waveCount[1], new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z),"PlayerWave");
         }
-        else if (distance >= 1)
-            {
-            //Debug.Log("衝撃波　小");
-            wave.WaveSizeSet(1.0f);
-            //wave.Instance(3, new Vector3(transform.position.x, transform.position.y - transform.position.y + 0.1f, transform.position.z));
-            wave.Instance(3, new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z));
-        }
-        else
+        else if (distance >= hight[2])
         {
-            //Debug.Log("衝撃波　0");
-        }
-
+            //Debug.Log("衝撃波　小");
+            WaveSetting.Setting.WaveSizeSet(waveSize[2]);
+            WaveSetting.Setting.Instance(waveCount[2], new Vector3(transform.position.x, transform.position.y - transform.localScale.y , transform.position.z), "PlayerWave");
+        }   
     }
-/*
-    IEnumerator ShockWave(float interval)
-    {
-        jumped = true;
-        yield return new WaitForSeconds(interval);
-    }
-*/
 
     //衝撃波を出した後
     IEnumerator InvincibleTime(float interval)
