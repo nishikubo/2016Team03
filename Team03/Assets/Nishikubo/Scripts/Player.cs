@@ -33,10 +33,17 @@ public class Player : MonoBehaviour {
     public float maxPosition = 20.0f;
     public float minPosition = -20.0f;
 
+    private Blowoff _Blowoff;
+    private Rigidbody _rd;
+
+    private bool _waveHit = false;
+
     // Use this for initialization
     void Start () {
         controller = GetComponent<CharacterController>();
         ma = mass;
+        _Blowoff = GetComponent<Blowoff>();
+        //_rd = GetComponent<Rigidbody>();
 
     }
 
@@ -59,6 +66,8 @@ public class Player : MonoBehaviour {
         //移動範囲
         transform.position = new Vector3(Mathf.Clamp(transform.position.x, minPosition, maxPosition), Mathf.Clamp(transform.position.y, minPosition, maxPosition), Mathf.Clamp(transform.position.z, minPosition, maxPosition));
 
+
+        
 
         if (controller.isGrounded)
         {
@@ -97,6 +106,7 @@ public class Player : MonoBehaviour {
     void Jump()
     {
         moveDirection.y = jumpPower;
+        Destroy(GetComponent<Rigidbody>());
     }
 
     //急降下
@@ -165,4 +175,53 @@ public class Player : MonoBehaviour {
         }
     }
 
+    public void OnTriggerEnter(Collider col)
+    {
+        //敵の衝撃波と当たったら吹っ飛ばす
+        if (col.tag == "EnemyWave")
+        {
+            //Debug.Log("atari");
+            //敵の進行方向と逆に吹っ飛ばす
+            //プレイヤー入力負荷
+
+            //EnemyWaveHit();
+
+            //moveDirection = new Vector3(0, 10, 0);
+
+            //GameObject enemyWave = col.gameObject;
+            //Vector3 enemyVec = enemyWave.transform.position;
+            //float dis=Vector3.Distance(transform.position, enemyVec);
+            //Vector3 dis = enemyVec - transform.position;
+
+//            Vector3 dis=transform.position;
+
+            //Debug.Log(enemyWave.tag+"  vec: "+enemyVec+"  dis "+dis);
+            //float x = moveDirection.x;
+            //moveDirection.x += x;
+
+            moveDirection = new Vector3(0, 10, 0);
+            //_rd = gameObject.AddComponent<Rigidbody>();
+
+
+        }
+    }
+
+    //敵の衝撃波に当たった
+    void EnemyWaveHit()
+    {
+        _waveHit = true;
+        _rd = gameObject.AddComponent<Rigidbody>();
+        _rd=GetComponent<Rigidbody>();
+        _rd.AddForce(transform.position * 10, ForceMode.Impulse);
+        //Debug.Log(_rd);
+
+
+        //Vector3 vec = (transform.position /*- col.transform.position*/).normalized;
+        /*
+        vec /= 2;
+        vec.y = 1;
+        _rd.AddForce(vec * 10, ForceMode.Impulse);
+        */
+        //_Blowoff.blowoff(_rd, vec, 10);
+    }
 }
