@@ -2,22 +2,19 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class Player : MonoBehaviour {
+
+public class Player2 : MonoBehaviour {
 
     //移動する方向ベクトル
-    private Vector3 moveDirection = Vector3.zero;
+    //private Vector3 moveDirection = Vector3.zero;
     //移動速度
     public float speed = 1.0f;
     //プレイヤーのジャンプ力
-    //public float jumpPower = 10.0f;
-    //ジャンプのカウント
-    public int jumpCount = 0;
-    //ジャンプの最大値
-    private int jumpMax = 20;
+    public float jumpPower = 10.0f;
     //重さ
     public float mass = 1.0f;
     //CharacterController取得
-    private CharacterController controller;
+    //private CharacterController controller;
     //急降下中か
     private bool swooped = false;
     private bool jumped = false;
@@ -40,69 +37,67 @@ public class Player : MonoBehaviour {
     //private Blowoff _Blowoff;
     private Rigidbody _rd;
 
-    //private bool damageFlag = false;
+    //private bool _waveHit = false;
 
     // Use this for initialization
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        //controller = GetComponent<CharacterController>();
         ma = mass;
         //_Blowoff = GetComponent<Blowoff>();
-        //_rd = GetComponent<Rigidbody>();
-
+        _rd = GetComponent<Rigidbody>();
+        Physics.gravity = new Vector3(0, -100.0f, 0);
     }
 
     // Update is called once per frame
     void Update()
     {
-        Move(9.8f);
+        Move();
+        //_rd.AddForce(new Vector3(0,9.8f,0), ForceMode.Acceleration);
     }
 
     //移動処理
-    void Move(float gravity)
+    void Move()
     {
-        float y = moveDirection.y;                
-        moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-        
-        moveDirection *= speed;
-        
-        moveDirection.y += y;
-        moveDirection.y -= gravity * Time.deltaTime * mass;
+        /* float y = moveDirection.y;
+         moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+         moveDirection *= speed;*/
+        //moveDirection.y += y;
+        //moveDirection.y -= gravity * Time.deltaTime * mass;
 
-        //if (damageFlag == false)
-            controller.Move(moveDirection * Time.deltaTime);
+        //controller.Move(moveDirection * Time.deltaTime);
+
+        float x = Input.GetAxisRaw("Horizontal");
+        float z = Input.GetAxisRaw("Vertical");
+        Vector3 direction = new Vector3(x, 0, z).normalized;
+        _rd.velocity = direction * speed;
+        //_rd.MovePosition(moveDirection * Time.deltaTime);
+        //_rd.velocity = moveDirection * speed;
+        //GetComponent<Rigidbody>().velocity += (Vector3.forward * 0.1f) * Time.deltaTime / _rd.mass;
+        //_rd.AddForce(moveDirection * Time.deltaTime);
+
+        //transform.position += transform.forward *Time.deltaTime;
 
         //移動範囲
         transform.position = new Vector3(Mathf.Clamp(transform.position.x, minPosition, maxPosition), Mathf.Clamp(transform.position.y, minPosition, maxPosition), Mathf.Clamp(transform.position.z, minPosition, maxPosition));
 
 
 
-
-        if (controller.isGrounded)
+        //地面と接触してるとき
+        /*if (controller.isGrounded)
         {
             swooped = false;
             //Debug.Log("mass " + mass + " ma " + ma);
             mass = ma;
 
             //mass = 1.0f;
-            if(Input.GetButton("Jump"))
-            {
-                
-                jumpCount++;
-                if(jumpCount>=jumpMax)
-                {
-                    jumpCount = jumpMax;
-                }
-
-                //Debug.Log(jumpCount);
-            }
-            if (jumpCount>0 && Input.GetButtonUp("Jump"))
+            if (Input.GetButtonDown("Jump"))
             {
                 Jump();
-                jumpCount = 0;
-            }
-        }
-        if (!controller.isGrounded)
+            }      
+        }*/
+        //地面と接触していないとき
+        //if(!controller.isGrounded)
         {
             swooped = true;
             if (Input.GetButtonDown("Jump") && swooped == true)
@@ -126,12 +121,13 @@ public class Player : MonoBehaviour {
     //ジャンプ処理　押された長さでジャンプ力変える
     void Jump()
     {
-        moveDirection.y = jumpCount/2;
+        _rd.AddForce(Vector3.up * speed, ForceMode.Impulse);
+
         //moveDirection.y = jumpPower;
         //Destroy(GetComponent<Rigidbody>());
     }
 
-    //急降下
+    //急降下 ジャンプ中に押されたら
     void Swoop()
     {
         mass = mass * 10;
@@ -202,15 +198,29 @@ public class Player : MonoBehaviour {
         //敵の衝撃波と当たったら吹っ飛ばす
         if (col.tag == "EnemyWave")
         {
-
+            //Debug.Log("atari");
             //敵の進行方向と逆に吹っ飛ばす
             //プレイヤー入力負荷
-            Vector3 pos = moveDirection;
 
-            
-            moveDirection = new Vector3(0, 10, 0);
-            //damageFlag = true;
             //EnemyWaveHit();
+
+            //moveDirection = new Vector3(0, 10, 0);
+
+            //GameObject enemyWave = col.gameObject;
+            //Vector3 enemyVec = enemyWave.transform.position;
+            //float dis=Vector3.Distance(transform.position, enemyVec);
+            //Vector3 dis = enemyVec - transform.position;
+
+            //            Vector3 dis=transform.position;
+
+            //Debug.Log(enemyWave.tag+"  vec: "+enemyVec+"  dis "+dis);
+            //float x = moveDirection.x;
+            //moveDirection.x += x;
+
+            //moveDirection = new Vector3(0, 10, 0);
+            //_rd = gameObject.AddComponent<Rigidbody>();
+
+
         }
     }
 
@@ -218,9 +228,9 @@ public class Player : MonoBehaviour {
     void EnemyWaveHit()
     {
         //_waveHit = true;
-        _rd = gameObject.AddComponent<Rigidbody>();
-        _rd = GetComponent<Rigidbody>();
-        _rd.AddForce(transform.position * 10, ForceMode.Impulse);
+        //_rd = gameObject.AddComponent<Rigidbody>();
+        //_rd=GetComponent<Rigidbody>();
+        //_rd.AddForce(transform.position * 10, ForceMode.Impulse);
         //Debug.Log(_rd);
 
 
@@ -233,4 +243,19 @@ public class Player : MonoBehaviour {
         //_Blowoff.blowoff(_rd, vec, 10);
     }
 
+    void OnCollisionEnter(Collision col)
+    {
+        if (col.gameObject.tag == "Floor")
+        {
+            swooped = false;
+            //Debug.Log("mass " + mass + " ma " + ma);
+            mass = ma;
+
+            //mass = 1.0f;
+            if (Input.GetButtonDown("Jump"))
+            {
+                Jump();
+            }
+        }
+    }
 }

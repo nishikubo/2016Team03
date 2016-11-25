@@ -1,9 +1,9 @@
 ﻿Shader "Shader Forge/X-Ray" {
 		Properties{
 			_BumpMap("Normal Map", 2D) = "bump" {}
-		_Color("Color", Color) = (0.5019608,0.5019608,0.5019608,1)
+			_Color("Color", Color) = (0.5019608,0.5019608,0.5019608,1)
 			_MainTex("Base Color", 2D) = "white" {}
-		_Metallic("Metallic", Range(0, 1)) = 0
+			_Metallic("Metallic", Range(0, 1)) = 0
 			_Gloss("Gloss", Range(0, 1)) = 0.8
 			_VisibleRange("VisibleRange", Range(1, 300)) = 100
 			_ShadeColor("ShadeColor", Color) = (0.5019608,0.5019608,0.5019608,1)

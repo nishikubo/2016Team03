@@ -6,14 +6,12 @@ public class BuilBlow : MonoBehaviour
     private Blowoff _Blowoff;
     private Rigidbody _rd;
 
-    private string _HitTag;
     private bool _IsGround = false;
     private bool _flag = false;
     private bool _Ishit = false;
 
     #region ---衝撃波のColor---
-    [SerializeField] private Color _EnemyWaveColor;
-    [SerializeField] private Color _PlayerColor;
+    [SerializeField] private Color _BuilWaveColor;
     #endregion
 
     public void Start()
@@ -38,7 +36,6 @@ public class BuilBlow : MonoBehaviour
         {
             if (_flag) return;
 
-            _HitTag = col.tag;
             Vector3 vec = (transform.position - col.transform.position).normalized;
             vec *= 0;
             vec.y = 1;
@@ -61,7 +58,8 @@ public class BuilBlow : MonoBehaviour
         pos.y -= transform.lossyScale.y * 0.5f - 0.1f;
 
         WaveSetting.Setting.WaveSizeSet(2);
-        WaveSetting.Setting.Instance(1, pos, _HitTag);
+        WaveSetting.Setting.SettingColor(_BuilWaveColor);
+        WaveSetting.Setting.Instance(1, pos, "ObjectWave");
 
         yield return new WaitForSeconds(1);
 

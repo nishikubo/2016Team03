@@ -122,7 +122,6 @@ public class WaveSetting : MonoBehaviour {
     public void SettingColor(Color color)
     {
         waveColor_ = new Vector3(color.r, color.g, color.b);
-        print(waveColor_);
     }
 
     //波の色を返す

@@ -9,8 +9,9 @@ public class Blowoff : MonoBehaviour {
     /// <param name="rd">飛ばしたいヤツのRigidbody</param>
     /// <param name="vec">飛ばすベクトル</param>
     /// <param name="power">飛ばす際のパワー</param>
-    public void blowoff(Rigidbody rd, Vector3 vec, float power)
+    public void blowoff(Rigidbody rd, Vector3 vec, float power = 10.0f)
     {
-        rd.AddForce(vec * power, ForceMode.Impulse);
+        vec.y *= power;
+        rd.AddForce(vec, ForceMode.Impulse);
     }
 }

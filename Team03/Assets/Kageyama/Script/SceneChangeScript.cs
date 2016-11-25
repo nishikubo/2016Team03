@@ -7,7 +7,9 @@ public class SceneChangeScript : MonoBehaviour
 {
     protected static SceneChangeScript Change;
     [SerializeField]
-    private RectTransform m_RectTransform;
+    private GameObject Fade_Object;
+    [SerializeField]
+    private RectTransform Fade;
     //フェードインの時間
     public float intime;
     //フェードアウトの時間
@@ -35,6 +37,7 @@ public class SceneChangeScript : MonoBehaviour
 
     void Awake()
     {
+        Fade_Object.SetActive(true);
         FadeIn();
         if(intime <= 0)
         {
@@ -56,11 +59,11 @@ public class SceneChangeScript : MonoBehaviour
     //フェードイン
     public void FadeIn()
     {
-        m_RectTransform.GetComponent<Image>().color = new Color(0, 0, 0, 1);
-        LeanTween.alpha(m_RectTransform, 0.0f, intime)
+        Fade.GetComponent<Image>().color = new Color(0, 0, 0, 1);
+        LeanTween.alpha(Fade, 0.0f, intime)
             .setOnComplete(() =>
             {
-                m_RectTransform.GetComponent<Image>().enabled = false;
+                Fade.GetComponent<Image>().enabled = false;
                 FadeFalse();
             });
     }
@@ -72,10 +75,10 @@ public class SceneChangeScript : MonoBehaviour
         {
             return;
         }
-        m_RectTransform.GetComponent<Image>().color = new Color(0, 0, 0, 0);
-        m_RectTransform.GetComponent<Image>().enabled = true;
+        Fade.GetComponent<Image>().color = new Color(0, 0, 0, 0);
+        Fade.GetComponent<Image>().enabled = true;
         FadeStart = true;
-        LeanTween.alpha(m_RectTransform, 1, outtime)
+        LeanTween.alpha(Fade, 1, outtime)
             .setOnComplete(() =>
             {
                 SceneOut(number);
@@ -88,9 +91,9 @@ public class SceneChangeScript : MonoBehaviour
         {
             return;
         }
-        m_RectTransform.GetComponent<Image>().enabled = true;
+        Fade.GetComponent<Image>().enabled = true;
         FadeStart = true;
-        LeanTween.alpha(m_RectTransform, 1, outtime)
+        LeanTween.alpha(Fade, 1, outtime)
             .setOnComplete(() =>
             {
                 SceneOut(name);
@@ -122,8 +125,8 @@ public class SceneChangeScript : MonoBehaviour
         {
             return;
         }
-        m_RectTransform.GetComponent<Image>().enabled = true;
+        Fade.GetComponent<Image>().enabled = true;
         FadeStart = true;
-        LeanTween.alpha(m_RectTransform, 0.5f, outtime);
+        LeanTween.alpha(Fade, 0.5f, outtime);
     }
 }
