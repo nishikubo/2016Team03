@@ -2,23 +2,22 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public enum EnemyState
+public enum EnemyBirdState
 {
     Wait,
-    Pursuit,
     Attack,
+    Rise,
     Died,
     Hit
 }
 
-public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
+public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
 {
     #region Component
     private Transform _target;
     private Rigidbody _rd;
-    private NavMeshAgent _Agent;
     #endregion
-    
+
     #region Tag
     private string _TargetTag = "Player";               // ターゲットとする相手のタグ
     private string _FieldTag = "Floor";                 // 地面のタグ
@@ -26,10 +25,8 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
     #region -各種ステータス-
     public float _SearchArea = 10;                      // 索敵範囲(距離)
-    public float _AttackArea = 5;                       // 攻撃範囲(距離)
     public float _RotateSmooth = 3.0f;                  // 振り向きにかかる速度
     public float _Speed = 5;                            // 追跡時の移動スピード
-    public float _JumpPower = 5;                        // ジャンプ力
     public Color _WaveColor;                            // 衝撃波のカラー
     #endregion
 
@@ -37,19 +34,17 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
     #region -各種フラグ-
     private bool _IsGround = false;                     // 接地しているかどうか
-    private bool _IsHitPlayer = false;                  // プレイヤーと接触しているかどうか
     private bool _Diedflag = false;                     // 死亡しているかどうか
-    [SerializeField] private bool _TipOver = false;     // ひっくり返るかどうか 
     #endregion
 
     private Vector3[] _LoiteringPos;                    // 徘徊するポジション
     private Vector3 _vec;
-    private float _DefaultSpeed;
+    private float _height;                              // 高さ
     private string _HitTag;                             // 衝突相手のTag
 
     #region -各種スクリプト-
     private PosGenerator _PosGene;
-    private Blowoff      _Blowoff;
+    private Blowoff _Blowoff;
     #endregion
 
     [SerializeField]
@@ -63,7 +58,6 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         // 各種コンポーネントの取得
         _rd = GetComponent<Rigidbody>();
-        _Agent = GetComponent<NavMeshAgent>();
 
         // 各種スクリプトの取得
         _PosGene = transform.FindChild("LoiteringPositions").GetComponent<PosGenerator>();
@@ -71,7 +65,6 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         // 各種値の初期化
         _LoiteringPos = new Vector3[_PosGene.GetPos.Length];
-        _DefaultSpeed = _Speed;
         for (int i = 0; i < _LoiteringPos.Length; i++)
         {
             _LoiteringPos[i] = _PosGene.GetPos[i].position;
@@ -91,14 +84,14 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         // Stateの初期設定
         statelist.Add(new StateWait(this));
-        statelist.Add(new StatePursuit(this));
         statelist.Add(new StateAttack(this));
+        statelist.Add(new StateRise(this));
         statelist.Add(new StateDied(this));
         statelist.Add(new StateHit(this));
 
-        stateManager = new StateManager<EnemyRoutine>();
+        stateManager = new StateManager<EnemyBirdRoutine>();
 
-        ChangeState(EnemyState.Wait);
+        ChangeState(EnemyBirdState.Wait);
     }
 
 
@@ -151,7 +144,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         Debug.Log("ﾋｯﾄｫｫ!!");
 
-        ChangeState(EnemyState.Hit);
+        ChangeState(EnemyBirdState.Hit);
     }
 
 
@@ -159,17 +152,22 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     public void OnCollisionEnter(Collision col)
     {
         if (col.collider.tag == _FieldTag) IsGround = true;
-        if (col.collider.tag == _TargetTag) IsHitPlayer = true;
+        if (col.collider.tag == "Building")
+        {
+            _HitTag = "PlayerWave";
+            FreezeRotation(false);
+            Hit(1);
+            _vec = (transform.position - col.transform.position).normalized;
+        }
     }
     public void OnCollisionExit(Collision col)
     {
         if (col.collider.tag == _FieldTag) IsGround = false;
-        if (col.collider.tag == _TargetTag) IsHitPlayer = false;
     }
 
     public void OnTriggerEnter(Collider col)
     {
-        if ((col.tag == "PlayerWave" || col.tag == "ObjectWave") && !IsCurrentState(EnemyState.Hit)) {
+        if ((col.tag == "PlayerWave" || col.tag == "ObjectWave") && !IsCurrentState(EnemyBirdState.Hit)) {
             _HitTag = col.tag;
             FreezeRotation(false);
             Hit(1);
@@ -185,19 +183,14 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         get { return _IsGround; }
         set { _IsGround = value; }
     }
-    // Playerと当たったかどうか
-    public bool IsHitPlayer
-    {
-        get { return _IsHitPlayer; }
-        set { _IsHitPlayer = value; }
-    }
     // Enemyと当たったかどうか
     public bool IsHitEnemy
     {
-        get {
+        get
+        {
             bool flag = false;
             RaycastHit hit;
-            if(Physics.SphereCast(transform.position, transform.lossyScale.x * 0.5f, -Vector3.up, out hit, 0.5f))
+            if (Physics.SphereCast(transform.position, transform.lossyScale.x * 0.5f, -Vector3.up, out hit, 0.5f))
             {
                 flag = hit.collider.tag == "Enemy";
             }
@@ -222,7 +215,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         switch (value)
         {
             case true:
-                _rd.constraints = 
+                _rd.constraints =
                     RigidbodyConstraints.FreezeRotationX |
                     RigidbodyConstraints.FreezeRotationZ;
                 break;
@@ -239,135 +232,94 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     /// <summary>
     /// 待機状態
     /// </summary>
-    private class StateWait : IState<EnemyRoutine>
+    private class StateWait : IState<EnemyBirdRoutine>
     {
         private int cureentroot = 0;
 
-        public StateWait(EnemyRoutine owner) : base(owner)
+        public StateWait(EnemyBirdRoutine owner) : base(owner)
         { }
 
         public override void Initialize()
         {
-            owner._rd.isKinematic = true;
-            owner._Agent.enabled = true;
+            owner._rd.useGravity = false;
         }
 
         public override void Execute()
         {
             if (owner.Search(owner._target, owner.transform, owner._SearchArea, owner._outlayer, owner._TargetTag))
             {
-                owner.ChangeState(EnemyState.Pursuit);
+                owner.ChangeState(EnemyBirdState.Attack);
                 return;
             }
 
+            // 目的地設定
             Vector3 pos = owner._LoiteringPos[cureentroot];
-
+            // 向きの設定
+            Vector3 vec = (pos - owner.transform.position).normalized;
             // 徘徊処理
+            vec.y = 0;
+            Quaternion targetRotate = Quaternion.LookRotation(vec);
+            owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, targetRotate, Time.deltaTime * owner._RotateSmooth);
+
+            owner.transform.Translate(Vector3.forward * owner._Speed * Time.deltaTime);
+
+
             if (Vector3.Distance(owner.transform.position, pos) < 1)
             {
                 cureentroot += 1;
                 cureentroot = cureentroot % owner._LoiteringPos.Length;
             }
 
-            owner._Agent.SetDestination(pos);
         }
 
         public override void End()
         {
-            owner._Agent.enabled = false;
-            owner._rd.isKinematic = false;
+            owner._rd.useGravity = true;
         }
 
-    }
-
-    /// <summary>
-    /// 追跡処理
-    /// </summary>
-    private class StatePursuit : IState<EnemyRoutine>
-    {
-        public StatePursuit(EnemyRoutine owner) : base(owner)
-        { }
-
-        public override void Initialize()
-        {
-        }
-
-        public override void Execute()
-        {
-            // _targetが_SearchArea外に出たら移行
-            if (!owner.Search(owner._target, owner.transform, owner._SearchArea, owner._outlayer, owner._TargetTag))
-            {
-                owner.ChangeState(EnemyState.Wait);
-                return;
-            }
-
-            // _targetが_AttackArea内に入ったら移行
-            if (owner.ToDistance(owner._target, owner.transform) < owner._AttackArea)
-            {
-                owner.ChangeState(EnemyState.Attack);
-                return;
-            }
-
-            Vector3 vec = owner._target.position - owner.transform.position;
-            vec.y = 0;
-            Quaternion targetRotate = Quaternion.LookRotation(vec);
-            owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, targetRotate, Time.deltaTime * owner._RotateSmooth);
-
-            owner.transform.Translate(Vector3.forward * owner._Speed * Time.deltaTime);
-        }
-
-        public override void End()
-        {
-        }
     }
 
     /// <summary>
     /// 攻撃処理
     /// </summary>
-    private class StateAttack : IState<EnemyRoutine>
+    private class StateAttack : IState<EnemyBirdRoutine>
     {
-        public StateAttack(EnemyRoutine owner) : base(owner)
+        public StateAttack(EnemyBirdRoutine owner) : base(owner)
         { }
 
         Vector3 vec;
-        bool flag = false, run = false;
+        bool run = false;
 
         public override void Initialize()
         {
-            vec.y = owner._JumpPower;
+            vec = new Vector3(0, 0, 0);
+            owner._height = owner.transform.position.y;
         }
 
         public override void Execute()
         {
-            if (owner.IsHitPlayer)
-            {
-                vec.y = owner._JumpPower;
-            }
             if (owner.IsHitEnemy)
             {
-                vec.y = owner._JumpPower;
+                vec.y = 3.0f;
             }
 
 
-            owner._rd.velocity = vec;
-            vec.y += Physics.gravity.y * Time.deltaTime;
-
-
-            if (owner.IsGround && flag)
+            if (owner.IsGround)
             {
                 Vector3 pos = owner.transform.position;
                 pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
                 owner.StartCoroutine(Wave(pos));
                 return;
             }
-            if (!owner.IsGround && !flag) flag = true;
+
+            owner._rd.velocity = vec;
+            vec.y += Physics.gravity.y * Time.deltaTime;
         }
 
         public override void End()
         {
-            flag = false;
             run = false;
-            owner._rd.velocity = Vector3.zero;
+            owner._rd.velocity = new Vector3(0, 0, 0);
         }
 
         IEnumerator Wave(Vector3 pos)
@@ -381,27 +333,56 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
             WaveSetting.Setting.Instance(1, pos, "EnemyWave");
 
             yield return new WaitForSeconds(1);
-            if (owner.IsCurrentState(EnemyState.Attack))
+            if (owner.IsCurrentState(EnemyBirdState.Attack))
             {
-                owner.ChangeState(EnemyState.Pursuit);
+                owner.ChangeState(EnemyBirdState.Rise);
             }
-
-
         }
     }
+
+    private class StateRise : IState<EnemyBirdRoutine>
+    {
+        public StateRise(EnemyBirdRoutine owner) : base(owner)
+        { }
+
+        float vecy;
+
+        public override void Initialize()
+        {
+            vecy = owner._height;
+            owner._rd.useGravity = false;
+        }
+
+        public override void Execute()
+        {
+            if(vecy <= owner.transform.position.y)
+            {
+                owner.ChangeState(EnemyBirdState.Wait);
+                return;
+            }
+
+            owner._rd.velocity = Vector3.up * owner._Speed * 0.5f;
+        }
+
+        public override void End()
+        {
+            owner._rd.velocity = new Vector3(0, 0, 0);
+        }
+    }
+
+
 
     /// <summary>
     /// 死亡処理
     /// </summary>
-    private class StateDied : IState<EnemyRoutine>
+    private class StateDied : IState<EnemyBirdRoutine>
     {
-        public StateDied(EnemyRoutine owner) : base(owner)
+        public StateDied(EnemyBirdRoutine owner) : base(owner)
         { }
 
         public override void Initialize()
         {
             Debug.Log("ｵﾗﾊｼﾝｼﾞﾏｯﾀﾀﾞｰ");
-            MissionManager.Misson.Enemy_Down(1);
             owner.Died();
         }
 
@@ -417,20 +398,21 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     /// <summary>
     /// ダメージ処理
     /// </summary>
-    private class StateHit : IState<EnemyRoutine>
+    private class StateHit : IState<EnemyBirdRoutine>
     {
-        public StateHit(EnemyRoutine owner) : base(owner)
+        public StateHit(EnemyBirdRoutine owner) : base(owner)
         { }
 
-        bool flag = false, run = false;
+        bool flag = false;
 
         public override void Initialize()
         {
+            owner._rd.useGravity = true;
+
             Vector3 vec = owner._vec;
             vec.y = 1;
             owner._Blowoff.blowoff(owner._rd, vec);
             iTween.RotateTo(owner.gameObject, iTween.Hash("x", 270));
-            MissionManager.Misson.Enemy_Shot_Up(1);
         }
 
         public override void Execute()
@@ -441,16 +423,9 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
                 Vector3 pos = owner.transform.position;
                 pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
 
-                if (!owner._TipOver){
-                    WaveSetting.Setting.WaveSizeSet(2);
-                    WaveSetting.Setting.Instance(1, pos, owner._HitTag);
-                    MissionManager.Misson.Enemy_Shot_Up(-1);
-                    owner.ChangeState(EnemyState.Died);
-                    return;
-                }
-
-                owner.StartCoroutine(TippingOver(pos));
-
+                WaveSetting.Setting.WaveSizeSet(2);
+                WaveSetting.Setting.Instance(1, pos, owner._HitTag);
+                owner.ChangeState(EnemyBirdState.Died);
                 return;
             }
             if (!owner.IsGround && !flag) flag = true;
@@ -460,33 +435,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         {
             owner.FreezeRotation(true);
             flag = false;
-            run = false;
         }
-
-        IEnumerator TippingOver(Vector3 pos)
-        {
-            if (run) yield break;
-            run = true;
-
-            owner._Speed *= 1.3f;
-            owner._Speed = Mathf.Clamp(owner._Speed, owner._DefaultSpeed, owner._DefaultSpeed * 2);
-            
-            WaveSetting.Setting.WaveSizeSet(1.5f);
-            WaveSetting.Setting.Instance(1, pos, owner._HitTag);
-            MissionManager.Misson.Enemy_Shot_Up(-1);
-
-            yield return new WaitForSeconds(3);
-
-            iTween.RotateTo(owner.gameObject, iTween.Hash("x", 0));
-
-            yield return new WaitForSeconds(1);
-
-            if (owner.IsCurrentState(EnemyState.Hit))
-            {
-                owner.ChangeState(EnemyState.Wait);
-            }
-        }
-
     }
 
 }

@@ -32,5 +32,15 @@ public class WaveSizeChange : MonoBehaviour
             Destroy(this.gameObject);
         }
         objectSize_ += 0.05f;
-    }    
+    }
+
+    /// <summary>
+    /// 波の現在の大きさから強さを計算する
+    /// </summary>
+    /// <returns></returns>
+    public float Power()
+    {
+        float power_ = (maxSize_ - objectSize_) * 3;
+        return power_;
+    }
 }
