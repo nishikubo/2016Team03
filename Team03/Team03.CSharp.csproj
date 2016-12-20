@@ -63,25 +63,43 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Team03.CSharp.Plugins.csproj">
-      <Project>{6B20BDA6-C968-1525-4A5E-661BE2D0AC02}</Project>
-      <Name>Team03.CSharp.Plugins</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="Assets\Kageyama\PowerCharge\PowerChargeEffect.cs" />
+    <Compile Include="Assets\Kageyama\Script\BGM.cs" />
+    <Compile Include="Assets\Kageyama\Script\Building.cs" />
     <Compile Include="Assets\Kageyama\Script\CameraMove.cs" />
+    <Compile Include="Assets\Kageyama\Script\ClearScroll.cs" />
+    <Compile Include="Assets\Kageyama\Script\Coin.cs" />
+    <Compile Include="Assets\Kageyama\Script\Frame.cs" />
+    <Compile Include="Assets\Kageyama\Script\GameClearImage.cs" />
+    <Compile Include="Assets\Kageyama\Script\GamePlayManager.cs" />
+    <Compile Include="Assets\Kageyama\Script\HP.cs" />
+    <Compile Include="Assets\Kageyama\Script\LeanTween.cs" />
+    <Compile Include="Assets\Kageyama\Script\MissionManager.cs" />
+    <Compile Include="Assets\Kageyama\Script\MissionUI.cs" />
+    <Compile Include="Assets\Kageyama\Script\MissonClearCheck.cs" />
+    <Compile Include="Assets\Kageyama\Script\MissonSlidePosition.cs" />
+    <Compile Include="Assets\Kageyama\Script\RankCheck.cs" />
+    <Compile Include="Assets\Kageyama\Script\SceneChangeScript.cs" />
+    <Compile Include="Assets\Kageyama\Script\SoundManger.cs" />
+    <Compile Include="Assets\Kageyama\Script\TitleButton.cs" />
+    <Compile Include="Assets\Kageyama\Script\TitleLogo_Rotate.cs" />
     <Compile Include="Assets\Kageyama\Script\WaveColorChange.cs" />
     <Compile Include="Assets\Kageyama\Script\WaveEffect.cs" />
     <Compile Include="Assets\Kageyama\Script\WaveSetting.cs" />
     <Compile Include="Assets\Kageyama\Script\WaveSizeChange.cs" />
     <Compile Include="Assets\Kageyama\Script\iTween.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Player.cs" />
+    <Compile Include="Assets\Nishikubo\Scripts\Player2.cs" />
+    <Compile Include="Assets\Nishikubo\Scripts\Player3.cs" />
     <Compile Include="Assets\Nishikubo\Scripts\Wave.cs" />
     <Compile Include="Assets\namba\Script\Blowoff.cs" />
     <Compile Include="Assets\namba\Script\Btest.cs" />
     <Compile Include="Assets\namba\Script\BuilBlow.cs" />
+    <Compile Include="Assets\namba\Script\ChackPCollide.cs" />
     <Compile Include="Assets\namba\Script\EnemyBase.cs" />
+    <Compile Include="Assets\namba\Script\EnemyBirdRoutine.cs" />
     <Compile Include="Assets\namba\Script\EnemyRoutine.cs" />
+    <Compile Include="Assets\namba\Script\Getchildlens.cs" />
     <Compile Include="Assets\namba\Script\IState.cs" />
     <Compile Include="Assets\namba\Script\NewBehaviourScript.cs" />
     <Compile Include="Assets\namba\Script\PosGenerator.cs" />
@@ -90,10 +108,8 @@
     <Compile Include="Assets\namba\Script\ptest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Kageyama\Shader\Enemy_X-Ray.shader" />
     <None Include="Assets\Kageyama\Shader\X-Ray.shader" />
-    <None Include="Assets\Standard Assets\Cameras\CameraGuidelines.txt" />
-    <None Include="Assets\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
-    <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

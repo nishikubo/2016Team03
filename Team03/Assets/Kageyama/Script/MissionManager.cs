@@ -36,39 +36,42 @@ public class MissionManager : MonoBehaviour
 
     //何体敵が打ちあがっているか
     private int _enemy_Shot_Up_Count;
-    //何体敵を倒したらミッションクリアにするか決める
+    //何体敵を同時に打ち上げたらミッションクリアにするか決める
     [SerializeField, TooltipAttribute("何体敵を打ち上げていればよいか決める")]
     private int _enemy_Shot_Up_Clear = 0;
 
-    //何体敵が打ちあがっているか
+    //何個オブジェクトが打ちあがっているか
     private int _building_Shot_Up_Count;
-    //何体敵を倒したらミッションクリアにするか決める
+    //何個同時にオブジェクトを打ち上げたらミッションクリアにするか決める
     [SerializeField, TooltipAttribute("何体オブジェクトを打ち上げていればよいか決める")]
     private int _building_Shot_Up_Clear = 0;
+
+    //コインを何枚い取得しているか
+    private int _coin_Count;
+    //何枚コインを集めたらミッションクリアにするか決める
+    [SerializeField, TooltipAttribute("何枚コインを集めればよいか決める")]
+    private int _coin_Clear = 0;
 
     //現在何個ミッションをクリアしているか調べる
     [SerializeField, TooltipAttribute("いくつのミッションをクリアしているか(入力しないで)")]
     public int _clearCount = 0;
     //何個ミッションをクリアしたらゲームクリアにするか決める
-    [SerializeField, TooltipAttribute("クリアするミッションの個数")]
-    private int _gameClear = 0;
+    [TooltipAttribute("クリアするミッションの個数")]
+    public int _gameClear = 0;
 
     // Use this for initialization
     void Start ()
     {
+        _enemy_Down_Count = 0;
+        _enemy_Shot_Up_Count = 0;
+        _building_Shot_Up_Count = 0;
+        _coin_Count = 0;
+        _clearCount = 0;
 	}
 	
 	// Update is called once per frame
 	void Update ()
     {
-        if(Input.GetKeyDown(KeyCode.A))
-        {
-            _clearCount += 1;
-        }
-        if(_clearCount >= _gameClear)
-        {
-            SceneChangeScript.sceneChange.SceneOut(1);
-        }
 	}
 
     /// <summary>
@@ -122,12 +125,13 @@ public class MissionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 指定の場所を通ったらフラグを立てる
+    /// コインを一定数手に入れたらフラグを立てる
     /// </summary>
     public void Through()
     {
+        _coin_Count += 1;
         //ミッションクリア条件を満たしていればミッションクリア
-        if (_through == false)
+        if (_through == false && _coin_Count >= _coin_Clear)
         {
             _clearCount += 1;
             _through = true;

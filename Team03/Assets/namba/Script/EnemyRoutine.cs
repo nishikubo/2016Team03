@@ -8,7 +8,8 @@ public enum EnemyState
     Pursuit,
     Attack,
     Died,
-    Hit
+    Hit,
+    Revival
 }
 
 public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
@@ -18,7 +19,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     private Rigidbody _rd;
     private NavMeshAgent _Agent;
     #endregion
-    
+
     #region Tag
     private string _TargetTag = "Player";               // ターゲットとする相手のタグ
     private string _FieldTag = "Floor";                 // 地面のタグ
@@ -26,11 +27,13 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
     #region -各種ステータス-
     public float _SearchArea = 10;                      // 索敵範囲(距離)
+    public float _VisionAngle = 45;                     // 索敵範囲(角度)
     public float _AttackArea = 5;                       // 攻撃範囲(距離)
     public float _RotateSmooth = 3.0f;                  // 振り向きにかかる速度
     public float _Speed = 5;                            // 追跡時の移動スピード
     public float _JumpPower = 5;                        // ジャンプ力
     public Color _WaveColor;                            // 衝撃波のカラー
+    private float _DownTime = 3;                         // ひっくり返っている時間
     #endregion
 
     public string[] _outlayer = new string[] { "" };    // 索敵時に無視するレイヤー名
@@ -39,17 +42,21 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     private bool _IsGround = false;                     // 接地しているかどうか
     private bool _IsHitPlayer = false;                  // プレイヤーと接触しているかどうか
     private bool _Diedflag = false;                     // 死亡しているかどうか
-    [SerializeField] private bool _TipOver = false;     // ひっくり返るかどうか 
+    private bool _TipOver = false;                      // ひっくり返っているかどうか
+    [SerializeField]
+    private bool _IsTipOver = false;   // ひっくり返るかどうか
+    [SerializeField]
+    private bool _IsPursuit = true;    // 追跡するかどうか
     #endregion
 
     private Vector3[] _LoiteringPos;                    // 徘徊するポジション
     private Vector3 _vec;
     private float _DefaultSpeed;
-    private string _HitTag;                             // 衝突相手のTag
 
     #region -各種スクリプト-
     private PosGenerator _PosGene;
-    private Blowoff      _Blowoff;
+    private Blowoff _Blowoff;
+    private ChackPCollide _Pcol;
     #endregion
 
     [SerializeField]
@@ -68,6 +75,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         // 各種スクリプトの取得
         _PosGene = transform.FindChild("LoiteringPositions").GetComponent<PosGenerator>();
         _Blowoff = GetComponent<Blowoff>();
+        _Pcol = transform.FindChild("collide").GetComponent<ChackPCollide>();
 
         // 各種値の初期化
         _LoiteringPos = new Vector3[_PosGene.GetPos.Length];
@@ -95,6 +103,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         statelist.Add(new StateAttack(this));
         statelist.Add(new StateDied(this));
         statelist.Add(new StateHit(this));
+        statelist.Add(new StateRevival(this));
 
         stateManager = new StateManager<EnemyRoutine>();
 
@@ -124,7 +133,10 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
             int layerMask = ~LayerMask.GetMask(outlayer);
             if (Physics.Raycast(position.position, temp.normalized, out hit, area, layerMask))
             {
-                discovery = hit.collider.tag == targetTag;
+                if (hit.collider.tag == targetTag && Vector3.Angle(temp, transform.forward) <= _VisionAngle)
+                {
+                    discovery = true;
+                }
             }
         }
 
@@ -149,8 +161,14 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     {
         if (IsDied) return;
 
-        Debug.Log("ﾋｯﾄｫｫ!!");
+        print("hit");
 
+        Vector3 vec;
+        vec = _vec;
+        vec.y = 1;
+        _Blowoff.blowoff(_rd, vec);
+
+        StopAllCoroutines();
         ChangeState(EnemyState.Hit);
     }
 
@@ -169,12 +187,20 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
     public void OnTriggerEnter(Collider col)
     {
-        if ((col.tag == "PlayerWave" || col.tag == "ObjectWave") && !IsCurrentState(EnemyState.Hit)) {
-            _HitTag = col.tag;
+        if ((col.tag == "PlayerWave" || col.tag == "ObjectWave") && !IsCurrentState(EnemyState.Revival))
+        {
+            if (col.tag == "PlayerWave" && _TipOver)
+            {
+                if (IsDied) return;
+
+                ChangeState(EnemyState.Revival);
+                return;
+            }
             FreezeRotation(false);
             Hit(1);
             _vec = (transform.localPosition - col.transform.localPosition).normalized;
         }
+
     }
     #endregion
 
@@ -194,10 +220,11 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
     // Enemyと当たったかどうか
     public bool IsHitEnemy
     {
-        get {
+        get
+        {
             bool flag = false;
             RaycastHit hit;
-            if(Physics.SphereCast(transform.position, transform.lossyScale.x * 0.5f, -Vector3.up, out hit, 0.5f))
+            if (Physics.SphereCast(transform.position, transform.lossyScale.x * 0.5f, -Vector3.up, out hit, 0.5f))
             {
                 flag = hit.collider.tag == "Enemy";
             }
@@ -222,7 +249,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         switch (value)
         {
             case true:
-                _rd.constraints = 
+                _rd.constraints =
                     RigidbodyConstraints.FreezeRotationX |
                     RigidbodyConstraints.FreezeRotationZ;
                 break;
@@ -231,6 +258,7 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
                 break;
         }
     }
+
 
     /*----------------------------------------------------/
                         ここからState処理
@@ -246,15 +274,21 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         public StateWait(EnemyRoutine owner) : base(owner)
         { }
 
+        private bool run = false;
+        private Vector3 v1, v2, forward;
+        private Quaternion targetRotate;
+
         public override void Initialize()
         {
             owner._rd.isKinematic = true;
             owner._Agent.enabled = true;
+            targetRotate = Quaternion.LookRotation(owner.transform.forward);
         }
 
         public override void Execute()
         {
-            if (owner.Search(owner._target, owner.transform, owner._SearchArea, owner._outlayer, owner._TargetTag))
+            if (owner.Search(owner._target, owner.transform, owner._SearchArea, owner._outlayer, owner._TargetTag)
+                && owner._IsPursuit)
             {
                 owner.ChangeState(EnemyState.Pursuit);
                 return;
@@ -265,8 +299,9 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
             // 徘徊処理
             if (Vector3.Distance(owner.transform.position, pos) < 1)
             {
-                cureentroot += 1;
-                cureentroot = cureentroot % owner._LoiteringPos.Length;
+                owner.StartCoroutine(ToLookAround());
+                owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, targetRotate, Time.deltaTime * owner._RotateSmooth);
+                return;
             }
 
             owner._Agent.SetDestination(pos);
@@ -276,8 +311,38 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
         {
             owner._Agent.enabled = false;
             owner._rd.isKinematic = false;
+            owner.StopCoroutine(ToLookAround());
         }
 
+        IEnumerator ToLookAround()
+        {
+            if (run) yield break;
+            run = true;
+
+            forward = owner.transform.forward;
+            v1 = owner.transform.right;
+            v2 = owner.transform.right * -1;
+            targetRotate = Quaternion.LookRotation(forward);
+
+            yield return new WaitForSeconds(0.5f);
+
+            targetRotate = Quaternion.LookRotation(v1);
+
+            yield return new WaitWhile(() => Quaternion.Angle(owner.transform.rotation, targetRotate) > 10);
+
+            targetRotate = Quaternion.LookRotation(v2);
+
+            yield return new WaitWhile(() => Quaternion.Angle(owner.transform.rotation, targetRotate) > 10);
+
+            targetRotate = Quaternion.LookRotation(forward);
+
+            yield return new WaitWhile(() => Quaternion.Angle(owner.transform.rotation, targetRotate) > 10);
+
+            cureentroot += 1;
+            cureentroot = cureentroot % owner._LoiteringPos.Length;
+
+            run = false;
+        }
     }
 
     /// <summary>
@@ -400,9 +465,9 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         public override void Initialize()
         {
-            Debug.Log("ｵﾗﾊｼﾝｼﾞﾏｯﾀﾀﾞｰ");
             MissionManager.Misson.Enemy_Down(1);
             owner.Died();
+            Debug.Log(owner.gameObject.name + "Down!!");
         }
 
         public override void Execute()
@@ -426,24 +491,35 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
 
         public override void Initialize()
         {
-            Vector3 vec = owner._vec;
-            vec.y = 1;
-            owner._Blowoff.blowoff(owner._rd, vec);
             iTween.RotateTo(owner.gameObject, iTween.Hash("x", 270));
             MissionManager.Misson.Enemy_Shot_Up(1);
         }
 
         public override void Execute()
         {
+            if(run && owner._Pcol.Pcollide)
+            {
+                owner._IsTipOver = false;
+
+                Vector3 vec;
+                vec = (owner.transform.localPosition - owner._target.localPosition).normalized;
+                vec.y = 1;
+                owner.StopAllCoroutines();
+
+                owner._Blowoff.blowoff(owner._rd, vec, 10, 10);
+                owner.ChangeState(EnemyState.Hit);
+                return;
+            }
             if (owner.IsGround && flag)
             {
 
                 Vector3 pos = owner.transform.position;
                 pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
 
-                if (!owner._TipOver){
+                if (!owner._IsTipOver)
+                {
                     WaveSetting.Setting.WaveSizeSet(2);
-                    WaveSetting.Setting.Instance(1, pos, owner._HitTag);
+                    WaveSetting.Setting.Instance(1, pos, "EnemyWave");
                     MissionManager.Misson.Enemy_Shot_Up(-1);
                     owner.ChangeState(EnemyState.Died);
                     return;
@@ -468,23 +544,61 @@ public class EnemyRoutine : EnemyBase<EnemyRoutine, EnemyState>
             if (run) yield break;
             run = true;
 
-            owner._Speed *= 1.3f;
-            owner._Speed = Mathf.Clamp(owner._Speed, owner._DefaultSpeed, owner._DefaultSpeed * 2);
-            
+            owner._TipOver = true;
             WaveSetting.Setting.WaveSizeSet(1.5f);
-            WaveSetting.Setting.Instance(1, pos, owner._HitTag);
+            WaveSetting.Setting.Instance(1, pos, "EnemyWave");
             MissionManager.Misson.Enemy_Shot_Up(-1);
 
-            yield return new WaitForSeconds(3);
+            yield return new WaitForSeconds(owner._DownTime);
 
+            owner._TipOver = false;
+
+            if (!owner.IsCurrentState(EnemyState.Hit)) { yield break; }
             iTween.RotateTo(owner.gameObject, iTween.Hash("x", 0));
 
             yield return new WaitForSeconds(1);
+
+            owner._Speed *= 1.3f;
+            owner._Speed = Mathf.Clamp(owner._Speed, owner._DefaultSpeed, owner._DefaultSpeed * 2);
 
             if (owner.IsCurrentState(EnemyState.Hit))
             {
                 owner.ChangeState(EnemyState.Wait);
             }
+        }
+    }
+
+    private class StateRevival : IState<EnemyRoutine>
+    {
+        public StateRevival(EnemyRoutine owner) : base(owner)
+        { }
+
+        bool flag = false;
+        Vector3 vec;
+
+        public override void Initialize()
+        {
+            vec = owner._vec;
+            vec.y = 1;
+            owner._Blowoff.blowoff(owner._rd, vec, 1, 5);
+            iTween.RotateTo(owner.gameObject, iTween.Hash("x", 0));
+            MissionManager.Misson.Enemy_Shot_Up(1);
+        }
+
+        public override void Execute()
+        {
+            if (owner.IsGround && flag)
+            {
+                owner.ChangeState(EnemyState.Wait);
+                return;
+            }
+            if (!owner.IsGround && !flag) flag = true;
+        }
+
+        public override void End()
+        {
+            owner.FreezeRotation(true);
+            flag = false;
         }
 
     }

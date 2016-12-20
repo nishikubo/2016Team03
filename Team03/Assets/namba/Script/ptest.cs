@@ -16,6 +16,8 @@ public class ptest : MonoBehaviour
 
     IEnumerator Lifetime()
     {
+        if(_time == 0) { yield break; }
+
         yield return new WaitForSeconds(_time);
 
         _pt.Stop();

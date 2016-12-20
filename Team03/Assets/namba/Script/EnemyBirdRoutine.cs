@@ -40,7 +40,6 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
     private Vector3[] _LoiteringPos;                    // 徘徊するポジション
     private Vector3 _vec;
     private float _height;                              // 高さ
-    private string _HitTag;                             // 衝突相手のTag
 
     #region -各種スクリプト-
     private PosGenerator _PosGene;
@@ -142,8 +141,6 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
     {
         if (IsDied) return;
 
-        Debug.Log("ﾋｯﾄｫｫ!!");
-
         ChangeState(EnemyBirdState.Hit);
     }
 
@@ -154,7 +151,6 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
         if (col.collider.tag == _FieldTag) IsGround = true;
         if (col.collider.tag == "Building")
         {
-            _HitTag = "PlayerWave";
             FreezeRotation(false);
             Hit(1);
             _vec = (transform.position - col.transform.position).normalized;
@@ -168,7 +164,6 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
     public void OnTriggerEnter(Collider col)
     {
         if ((col.tag == "PlayerWave" || col.tag == "ObjectWave") && !IsCurrentState(EnemyBirdState.Hit)) {
-            _HitTag = col.tag;
             FreezeRotation(false);
             Hit(1);
             _vec = (transform.localPosition - col.transform.localPosition).normalized;
@@ -382,8 +377,9 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
 
         public override void Initialize()
         {
-            Debug.Log("ｵﾗﾊｼﾝｼﾞﾏｯﾀﾀﾞｰ");
+            MissionManager.Misson.Enemy_Down(1);
             owner.Died();
+            Debug.Log(owner.gameObject.name + "Down!!");
         }
 
         public override void Execute()
@@ -424,7 +420,7 @@ public class EnemyBirdRoutine : EnemyBase<EnemyBirdRoutine, EnemyBirdState>
                 pos.y -= owner.transform.lossyScale.y * 0.5f - 0.1f;
 
                 WaveSetting.Setting.WaveSizeSet(2);
-                WaveSetting.Setting.Instance(1, pos, owner._HitTag);
+                WaveSetting.Setting.Instance(1, pos, "EnemyWave");
                 owner.ChangeState(EnemyBirdState.Died);
                 return;
             }

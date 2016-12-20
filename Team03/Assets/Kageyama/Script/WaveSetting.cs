@@ -54,7 +54,11 @@ public class WaveSetting : MonoBehaviour {
         }	
 	}
 
-    //波とエフェクトを作成
+    /// <summary>
+    /// 波とエフェクトを作成
+    /// </summary>
+    /// <param name="position">座標</param>
+    /// <param name="tagname">タグの名前</param>
     public void Instance(Vector3 position, string tagname)
     {
         //波を生成(一つ)
@@ -63,6 +67,12 @@ public class WaveSetting : MonoBehaviour {
         EffectInstance(position);
     }
 
+    /// <summary>
+    /// 波とエフェクトを作成
+    /// </summary>
+    /// <param name="num">衝撃波の個数</param>
+    /// <param name="position">座標</param>
+    /// <param name="tagname">タグの名前</param>
     public void Instance(int num, Vector3 position, string tagname)
     {
         //生成(複数)
@@ -71,15 +81,38 @@ public class WaveSetting : MonoBehaviour {
         EffectInstance(position);
     }
 
-    //波の作成
+    /// <summary>
+    /// 波の作成
+    /// </summary>
+    /// <param name="position">座標</param>
+    /// <param name="tagname">タグの名前</param>
     public void WaveInstance(Vector3 position, string tagname)
     {
         waveCollider_.tag = tagname;
+        wave_.tag = tagname;
         //当たり判定の作成
         Instantiate(waveCollider_, position, new Quaternion(0, 0, 0, 0));
         Instantiate(wave_, position, new Quaternion(0, 0, 0, 0));
     }
-    //波の生成(複数)
+
+    /// <summary>
+    /// 波だけを生成(当たり判定なし)
+    /// </summary>
+    /// <param name="position">座標</param>
+    /// <param name="tagname">タグの名前</param>
+    public void WaveOnlyInstance(Vector3 position, string tagname)
+    {
+        wave_.tag = tagname;
+        Instantiate(wave_, position, new Quaternion(0, 0, 0, 0));
+    }
+
+    /// <summary>
+    /// 波の生成(複数)
+    /// </summary>
+    /// <param name="num">衝撃波の個数</param>
+    /// <param name="position">座標</param>
+    /// <param name="tagname">タグの名前</param>
+    /// <returns></returns>
     public IEnumerator WaveInstance(int num, Vector3 position, string tagname)
     {
         waveCollider_.tag = tagname;
@@ -87,18 +120,25 @@ public class WaveSetting : MonoBehaviour {
         Instantiate(waveCollider_, position, new Quaternion(0, 0, 0, 0));
         for (int i = 0; i < num; i++)
         {
+            wave_.tag = tagname;
             Instantiate(wave_, position, new Quaternion(0, 0, 0, 0));
             yield return new WaitForSeconds(0.1f);
         }
     }
 
-    //エフェクトの作成
+    /// <summary>
+    /// エフェクトの作成
+    /// </summary>
+    /// <param name="position">座標</param>
     public void EffectInstance(Vector3 position)
     {
         Instantiate(effect_, position, new Quaternion(0, 0, 0, 0));
     }
 
-    //波の大きくなる最大値を設定
+    /// <summary>
+    /// 波の大きくなる最大値を設定
+    /// </summary>
+    /// <param name="size">波の最大値</param>
     public void WaveSizeSet(float size)
     {
         waveMaxSize_ = size;
@@ -106,25 +146,37 @@ public class WaveSetting : MonoBehaviour {
         wabeAlphaSub_ = 1.0f / (waveMaxSize_ / 0.05f);
     }
 
-    //波の最大の大きさを返す
+    /// <summary>
+    /// 波の最大の大きさを返す
+    /// </summary>
+    /// <returns></returns>
     public float WaveMaxSize()
     {
         return waveMaxSize_;
     }
 
-    //波の下げていく値を返す
+    /// <summary>
+    /// 波の下げていく値を返す
+    /// </summary>
+    /// <returns></returns>
     public float WaveAlphaSub()
     {
         return wabeAlphaSub_;
     }
 
-    //波の色の設定
+    /// <summary>
+    /// 波の色の設定
+    /// </summary>
+    /// <param name="color"></param>
     public void SettingColor(Color color)
     {
         waveColor_ = new Vector3(color.r, color.g, color.b);
     }
 
-    //波の色を返す
+    /// <summary>
+    /// 波の色を返す
+    /// </summary>
+    /// <returns>波の色</returns>
     public Vector3 WaveColor()
     {
         return waveColor_;

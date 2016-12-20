@@ -6,9 +6,11 @@ public class BuilBlow : MonoBehaviour
     private Blowoff _Blowoff;
     private Rigidbody _rd;
 
-    private bool _IsGround = false;
+    public bool _IsGround = false;
     private bool _flag = false;
     private bool _Ishit = false;
+
+    [SerializeField] private bool _IsBreak = false;
 
     #region ---衝撃波のColor---
     [SerializeField] private Color _BuilWaveColor;
@@ -37,9 +39,10 @@ public class BuilBlow : MonoBehaviour
             if (_flag) return;
 
             Vector3 vec = (transform.position - col.transform.position).normalized;
-            vec *= 0;
+            if (!_IsBreak) { vec *= 0; }
+
             vec.y = 1;
-            _Blowoff.blowoff(_rd, vec, 10);
+            _Blowoff.blowoff(_rd, vec, 2);
         }
     }
     void OnCollisionEnter(Collision col)
@@ -61,8 +64,19 @@ public class BuilBlow : MonoBehaviour
         WaveSetting.Setting.SettingColor(_BuilWaveColor);
         WaveSetting.Setting.Instance(1, pos, "ObjectWave");
 
+        if (_IsBreak) {
+            Dead();
+            yield break;
+        }
+
+
         yield return new WaitForSeconds(1);
 
         _flag = false;
+    }
+
+    void Dead()
+    {
+        Destroy(gameObject);
     }
 }
